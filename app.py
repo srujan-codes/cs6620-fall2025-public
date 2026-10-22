@@ -6,6 +6,7 @@ from flask import Flask, render_template, request, jsonify, send_from_directory,
 from flask_cors import CORS
 from pydub import AudioSegment
 import tempfile
+from datetime import datetime, timezone
 
 app = Flask(__name__)
 CORS(app)
@@ -139,7 +140,7 @@ def serve_audio_segment():
         app.logger.error(f"Error extracting audio segment: {e}")
         return f"Error extracting audio segment: {str(e)}", 500
 
-@app.route('/')
+@app.route('/app')
 def index():
     """
     Renders the main HTML page for the client-side audio player.
@@ -568,9 +569,41 @@ def auto_load_data():
             app.logger.error(f"Failed to auto-load CSV: {e}")
 
 
+# Topic 7 Exercise 3: automated deployment info
+GIT_SHA = os.environ.get("GIT_SHA", "unknown")[:7]
+BUILD_DATE = os.environ.get("BUILD_DATE", "unknown")
+STARTED_AT = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+
+
+@app.route('/')
+def deploy_info():
+    return f'''
+    <h1>Hello from Automated CI/CD Pipeline!</h1>
+    <p><strong>Version:</strong> 2.0 - Automated Deployment</p>
+    <p><strong>Deployed via:</strong> GitHub Actions + AWS SSM</p>
+    <p><strong>Build Date:</strong> {BUILD_DATE}</p>
+    <p><strong>Commit:</strong> {GIT_SHA}</p>
+    <p><strong>Container Started:</strong> {STARTED_AT}</p>
+    <p><strong>Assignment:</strong> Automated EC2 Deployment</p>
+    <p><a href="/app">Open the audio player app</a></p>
+    '''
+
+
+@app.route('/health')
+def health():
+    return {
+        'status': 'healthy',
+        'version': '2.0',
+        'deployment_method': 'automated',
+        'commit': GIT_SHA,
+        'build_date': BUILD_DATE,
+        'timestamp': datetime.now(timezone.utc).isoformat()
+    }
+
+
 if __name__ == '__main__':
     # Auto-load CSV and audio files on startup
     auto_load_data()
     app.run(debug=True, host='0.0.0.0', port=3000)
-# Version: 1.0.2
-# Built with GitHub Actions
+# Version: 2.0
+# Built with GitHub Actions + deployed via AWS SSM
